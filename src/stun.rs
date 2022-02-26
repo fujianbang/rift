@@ -1,7 +1,6 @@
 //! A rust implementation of STUN proto
 
-use std::collections::btree_map::Values;
-use std::io::Bytes;
+use rand::{thread_rng, Rng};
 
 const MAGIC_COOKIE: i32 = 0x2112A442;
 const FINGERPRINT: i32 = 0x5354554e;
@@ -57,7 +56,7 @@ impl Message {
     ///
     /// message method
     /// * 0b000000000001 (Binding)
-    fn set_message_type() {
+    fn set_message_type(&mut self) {
         todo!()
     }
     fn set_magic_cookie(&mut self) {
@@ -73,8 +72,13 @@ impl Message {
     ///
     /// allow the client to associate the response with the Request that generated it;
     /// for indications, the transaction ID serves as a debugging aid.
-    fn set_transaction_id() {
-        let a = 0b00;
+    fn set_transaction_id(&mut self) {
+        let mut rnd: [u8; 12] = [0; 12];
+        thread_rng().fill(&mut rnd);
+
+        rnd.iter()
+            .enumerate()
+            .for_each(|(i, &v)| self.header[8 + i] = v);
     }
 }
 
@@ -82,6 +86,8 @@ impl Message {
 fn test_set_magic_cookie() {
     let mut a = Message::new();
     a.set_magic_cookie();
+    a.set_transaction_id();
+    a.set_transaction_id();
     println!("{:?}", a)
 }
 
