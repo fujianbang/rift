@@ -59,6 +59,7 @@ impl Message {
     fn set_message_type(&mut self) {
         todo!()
     }
+    /// set head(magic cookie)
     fn set_magic_cookie(&mut self) {
         MAGIC_COOKIE
             .to_be_bytes()
@@ -68,7 +69,9 @@ impl Message {
                 self.header[4 + i] = v;
             });
     }
-    /// a randomly selected 96-bits number
+    /// set header(transaction id) automatically
+    ///
+    /// Transaction ID is a random 96-bits number.
     ///
     /// allow the client to associate the response with the Request that generated it;
     /// for indications, the transaction ID serves as a debugging aid.
