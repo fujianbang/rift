@@ -26,10 +26,7 @@ pub struct Message {
     message_length: u16,
     magic_cookie: u32,
     transaction_id: [u8; 12],
-    // attributes: Vec<Attribute>,
 }
-
-struct Attribute {}
 
 impl Message {
     pub fn new(class: MessageClass) -> Self {
@@ -62,7 +59,7 @@ impl Message {
 
 #[test]
 fn test_set_magic_cookie() {
-    let mut a = Message::new(MessageClass::Request);
+    let a = Message::new(MessageClass::Request);
     println!("{:?}", a);
     println!("{:?}", a.binary());
 }
