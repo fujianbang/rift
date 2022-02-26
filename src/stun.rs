@@ -31,10 +31,13 @@ struct Attribute {}
 
 impl Message {
     pub fn new() -> Self {
-        // generate header
+        let mut header = [0; 20];
+
+        Self::set_magic_cookie(&mut header);
+        Self::set_transaction_id(&mut header);
 
         Self {
-            header: [0; 20],
+            header,
             // attributes: vec![],
         }
     }
@@ -56,17 +59,36 @@ impl Message {
     ///
     /// message method
     /// * 0b000000000001 (Binding)
-    fn set_message_type(&mut self) {
-        todo!()
+    fn set_message_type(&mut self, class: MessageClass) {
+        let a: u32 = match class {
+            MessageClass::Request => {
+                todo!()
+            }
+            MessageClass::Indication => {
+                todo!()
+            }
+            MessageClass::SuccessResponse => {
+                todo!()
+            }
+            MessageClass::ErrorResponse => {
+                todo!()
+            }
+        };
     }
-    /// set head(magic cookie)
-    fn set_magic_cookie(&mut self) {
+    /// set header(message length)
+    fn set_message_length(&mut self, length: u32) {
+        let s: [u8; 2] = length.to_be_bytes();
+        self.header[2] = s[0];
+        self.header[3] = s[1];
+    }
+    /// set header(magic cookie)
+    fn set_magic_cookie(header: &mut [u8; 20]) {
         MAGIC_COOKIE
             .to_be_bytes()
             .iter()
             .enumerate()
             .for_each(|(i, &v)| {
-                self.header[4 + i] = v;
+                header[4 + i] = v;
             });
     }
     /// set header(transaction id) automatically
@@ -75,13 +97,11 @@ impl Message {
     ///
     /// allow the client to associate the response with the Request that generated it;
     /// for indications, the transaction ID serves as a debugging aid.
-    fn set_transaction_id(&mut self) {
+    fn set_transaction_id(header: &mut [u8; 20]) {
         let mut rnd: [u8; 12] = [0; 12];
         thread_rng().fill(&mut rnd);
 
-        rnd.iter()
-            .enumerate()
-            .for_each(|(i, &v)| self.header[8 + i] = v);
+        rnd.iter().enumerate().for_each(|(i, &v)| header[8 + i] = v);
     }
 }
 
@@ -100,7 +120,7 @@ enum MessageClass {
     /// 0b01
     Indication,
     /// 0b10
-    SuccessResponse(),
+    SuccessResponse,
     /// 0b11
     ErrorResponse,
 }
