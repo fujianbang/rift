@@ -1,4 +1,4 @@
-use crate::stun::Message;
+use crate::stun::{Message, MessageClass};
 use std::net::IpAddr;
 
 /// STUN client
@@ -10,8 +10,7 @@ struct Client {
 impl Client {
     /// discover the NAT
     fn discover() -> IpAddr {
-        let package = Message::new();
-        // package.s
+        let package = Message::new(MessageClass::Request);
         // Message::new();
         todo!()
     }

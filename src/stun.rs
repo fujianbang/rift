@@ -49,18 +49,25 @@ impl Message {
             transaction_id,
         }
     }
+
+    pub fn binary(&self) -> Vec<u8> {
+        let mut data: Vec<u8> = Vec::new();
+        data.extend_from_slice(&self.message_type.to_be_bytes());
+        data.extend_from_slice(&self.message_length.to_be_bytes());
+        data.extend_from_slice(&self.magic_cookie.to_be_bytes());
+        data.extend_from_slice(&self.transaction_id);
+        data
+    }
 }
 
 #[test]
 fn test_set_magic_cookie() {
-    let mut a = Message::new();
-    a.set_magic_cookie();
-    a.set_transaction_id();
-    a.set_transaction_id();
-    println!("{:?}", a)
+    let mut a = Message::new(MessageClass::Request);
+    println!("{:?}", a);
+    println!("{:?}", a.binary());
 }
 
-enum MessageClass {
+pub enum MessageClass {
     /// 0b00
     Request,
     /// 0b01
