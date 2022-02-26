@@ -1,3 +1,3 @@
-fn main() {
-    println!("Hello, rift!");
-}
+mod stun;
+
+fn main() {}

@@ -1,6 +1,6 @@
 # rift
 
-Some Network Tools implemented by Rust.
+Utilities for Network implemented by Rust.
 
 ## Table of Contents
 
@@ -21,4 +21,4 @@ Some Network Tools implemented by Rust.
 
 ## Perhaps
 
-* ICE [RFC 5245](https://datatracker.ietf.org/doc/html/rfc5245)
+* ICE [RFC 8445](https://datatracker.ietf.org/doc/html/rfc8445)
