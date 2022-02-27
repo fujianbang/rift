@@ -18,6 +18,6 @@ fn main() -> std::io::Result<()> {
         println!("receive {:?}", buf);
 
         let m = Message::from_bytes(buf);
-        println!("receive {:?}", m);
+        // println!("receive {:?}", m);
     }
 }

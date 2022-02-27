@@ -1,6 +1,8 @@
 //! A rust implementation of STUN proto
 
 use rand::{thread_rng, Rng};
+use std::fmt;
+use std::fmt::{Formatter, Pointer};
 
 const FINGERPRINT: i32 = 0x5354554e;
 
@@ -25,7 +27,6 @@ pub struct Message {
     message_length: u16,
     magic_cookie: u32,
     transaction_id: [u8; 12],
-    attributes: Vec<Attribute>,
 }
 
 impl Message {
@@ -48,23 +49,30 @@ impl Message {
     }
 
     pub fn from_bytes(data: &[u8]) -> Self {
-        // TODO
-        // let message_type = ((data[0] << 4) & 0xf + (data[1]) & 0xf) as u16;
-        // let magic_cookie =
+        println!("{:?}", data);
 
+        // MessageType
+        let message_type = ((data[0] as u16) << 8) + data[1] as u16;
+
+        // MessageLength
+        let message_length = Self::bytes_to_u16(&data[2..4]);
+
+        // MagicCookie
+        let magic_cookie = Self::bytes_to_u32(&data[4..8]);
+
+        // TransactionID
         let mut v: Vec<u8> = Vec::new();
         v.extend_from_slice(&data[8..]);
+        let transaction_id: [u8; 12] = v.as_slice().try_into().expect("error");
 
-        let b: [u8; 12] = v.as_slice().try_into().expect("error");
         Self {
-            message_type: 0, // TODO,
-            message_length: 0,
-            magic_cookie: 0,
-            transaction_id: b,
+            message_type,
+            message_length,
+            magic_cookie,
+            transaction_id,
         }
     }
-
-    pub fn binary(&self) -> Vec<u8> {
+    pub fn to_binary(&self) -> Vec<u8> {
         let mut data: Vec<u8> = Vec::new();
         data.extend_from_slice(&self.message_type.to_be_bytes());
         data.extend_from_slice(&self.message_length.to_be_bytes());
@@ -72,13 +80,41 @@ impl Message {
         data.extend_from_slice(&self.transaction_id);
         data
     }
+
+    fn bytes_to_u16(s: &[u8]) -> u16 {
+        let mut val: u16 = 0;
+        for (i, &v) in s.iter().enumerate() {
+            val = val + ((v as u16) << (8 * (s.len() - i - 1)));
+        }
+        val
+    }
+
+    fn bytes_to_u32(s: &[u8]) -> u32 {
+        let mut val: u32 = 0;
+        for (i, &v) in s.iter().enumerate() {
+            val = val + ((v as u32) << (8 * (s.len() - i - 1)));
+        }
+        val
+    }
+}
+
+impl fmt::Debug for Message {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{:?} - {:?} - {:?} - {:?}",
+            self.message_type, self.message_length, self.magic_cookie, self.transaction_id
+        )
+    }
 }
 
 #[test]
-fn test_set_magic_cookie() {
-    let a = Message::new(MessageClass::Request);
-    println!("{:?}", a);
-    println!("{:?}", a.binary());
+fn message_formatter() {
+    let m = Message::new(MessageClass::Request);
+    let m2 = Message::from_bytes(m.to_binary().as_slice());
+    // println!("origin: {:?}", m);
+    // println!("after: {:?}", m2);
+    assert_eq!(m.to_binary(), m2.to_binary());
 }
 
 pub enum MessageClass {
