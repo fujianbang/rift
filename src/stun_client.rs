@@ -15,9 +15,6 @@ impl Client {
     }
     /// discover the NAT
     fn discover(&self) -> Result<(), StunError> {
-        let package = Message::new(MessageClass::Request);
-        package.binary();
-
         // network handle
         let socket = UdpSocket::bind("0.0.0.0:0");
         let socket = match socket {
@@ -28,7 +25,10 @@ impl Client {
             }
         };
 
-        match socket.send_to("-> hello".as_bytes(), self.server_address.as_str()) {
+        let package = Message::new(MessageClass::Request);
+        println!("send {:?}", package);
+        println!("send binary {:?}", package.binary().as_slice());
+        match socket.send_to(package.binary().as_slice(), self.server_address.as_str()) {
             Ok(a) => a,
             Err(e) => {
                 println!("{:?}", e);

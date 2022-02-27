@@ -1,3 +1,4 @@
+use crate::stun::Message;
 use std::net::UdpSocket;
 use std::str;
 
@@ -14,6 +15,9 @@ fn main() -> std::io::Result<()> {
 
         let buf = &mut buf[..c];
         // socket.send_to(buf, &src);
-        println!("{:?}", str::from_utf8(buf));
+        println!("receive {:?}", buf);
+
+        let m = Message::from_bytes(buf);
+        println!("receive {:?}", m);
     }
 }

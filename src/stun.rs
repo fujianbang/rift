@@ -20,12 +20,12 @@ const FINGERPRINT: i32 = 0x5354554e;
 /// |                     Transaction ID (96 bits)                  |
 /// |                                                               |
 /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-#[derive(Debug)]
 pub struct Message {
     message_type: u16,
     message_length: u16,
     magic_cookie: u32,
     transaction_id: [u8; 12],
+    attributes: Vec<Attribute>,
 }
 
 impl Message {
@@ -44,6 +44,23 @@ impl Message {
             message_length: 0, // TODO
             magic_cookie: 0x2112A442,
             transaction_id,
+        }
+    }
+
+    pub fn from_bytes(data: &[u8]) -> Self {
+        // TODO
+        // let message_type = ((data[0] << 4) & 0xf + (data[1]) & 0xf) as u16;
+        // let magic_cookie =
+
+        let mut v: Vec<u8> = Vec::new();
+        v.extend_from_slice(&data[8..]);
+
+        let b: [u8; 12] = v.as_slice().try_into().expect("error");
+        Self {
+            message_type: 0, // TODO,
+            message_length: 0,
+            magic_cookie: 0,
+            transaction_id: b,
         }
     }
 
@@ -74,3 +91,93 @@ pub enum MessageClass {
     /// 0b11
     ErrorResponse,
 }
+
+/// STUN Attributes
+///
+///  0                   1                   2                   3
+///  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+/// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/// |         Type                  |            Length             |
+/// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/// |                         Value (variable)                ....
+/// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+struct Attribute {}
+
+/// MAPPED_ADDRESS
+///
+///  0                   1                   2                   3
+///  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+/// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/// |0 0 0 0 0 0 0 0|    Family     |           Port                |
+/// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/// |                                                               |
+/// |                 Address (32 bits or 128 bits)                 |
+/// |                                                               |
+/// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+struct MappedAddress {}
+
+/// XOR-MAPPED-ADDRESS
+///
+///  0                   1                   2                   3
+///  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+/// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/// |0 0 0 0 0 0 0 0|    Family     |         X-Port                |
+/// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/// |                X-Address (Variable)
+/// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+struct XorMappedAddress {}
+
+/// ERROR_CODE
+///
+/// 0                   1                   2                   3
+/// 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+/// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/// |           Reserved, should be 0         |Class|     Number    |
+/// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/// |      Reason Phrase (variable)                                ..
+/// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+enum ErrorCode {
+    TryAlternate = 300,
+    BadRequest = 400,
+    Unauthenticated = 401,
+    UnknownAttribute = 420,
+    StaleNonce = 438,
+    ServerError = 500,
+}
+
+/// PASSWORD-ALGORITHMS
+///
+/// 0                   1                   2                   3
+/// 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+/// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/// |         Algorithm 1           | Algorithm 1 Parameters Length |
+/// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/// |                    Algorithm 1 Parameters (variable)
+/// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/// |         Algorithm 2           | Algorithm 2 Parameters Length |
+/// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/// |                    Algorithm 2 Parameters (variable)
+/// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/// |                                                             ...
+struct PasswordAlgorithms {}
+
+/// PASSWORD_ALGORITHM
+///   0                   1                   2                   3
+///  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+/// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/// |          Algorithm           |  Algorithm Parameters Length   |
+/// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/// |                    Algorithm Parameters (variable)
+/// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+struct PasswordAlgorithm {}
+
+/// UNKNOWN-ATTRIBUTES
+///
+///   0                   1                   2                   3
+///  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+/// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/// |      Attribute 1 Type         |       Attribute 2 Type        |
+/// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/// |      Attribute 3 Type         |       Attribute 4 Type    ...
+/// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+struct UnknownAttributes {}
