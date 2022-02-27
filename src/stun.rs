@@ -109,7 +109,7 @@ impl fmt::Debug for Message {
 }
 
 #[test]
-fn message_formatter() {
+fn message_serialize() {
     let m = Message::new(MessageClass::Request);
     let m2 = Message::from_bytes(m.to_binary().as_slice());
     // println!("origin: {:?}", m);
