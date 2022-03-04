@@ -25,7 +25,7 @@ impl Client {
             }
         };
 
-        let package = Message::new(MessageClass::Request);
+        // let package = Message::new(MessageClass::Request);
         // println!("send {:?}", package);
         // println!("send binary {:?}", package.binary().as_slice());
         // match socket.send_to(package.binary().as_slice(), self.server_address.as_str()) {

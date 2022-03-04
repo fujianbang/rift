@@ -43,7 +43,7 @@ impl Message {
             message_length: 0, // TODO
             magic_cookie: MAGIC_COOKIE,
             transaction_id: TransactionId::new(),
-            attributes: vec![],
+            attributes: Vec::new(),
         }
     }
 
@@ -57,9 +57,9 @@ impl Message {
         self.method
     }
 
-    /// Returns the Transaction ID of the message
-    fn transaction_id(&self) -> TransactionId {
-        self.transaction_id
+    /// Returns the Transaction ID reference of the message
+    fn transaction_id(&self) -> &TransactionId {
+        &self.transaction_id
     }
 
     /// Add Attribute to the message
@@ -68,45 +68,60 @@ impl Message {
     }
 
     /// Get the set of Attribute from the message
-    fn attributes(&self) -> &[Attribute]{
+    fn attributes(&self) -> &[Attribute] {
         self.attributes.as_slice()
+    }
+
+    /// To binary
+    fn to_binary(&self) -> Vec<u8> {
+        // message type
+        let message_type: u16 = match self.class {
+            MessageClass::Request => 0b00000_0_000_0_0001,
+            MessageClass::Indication => 0b00000_0_000_1_0001,
+            MessageClass::SuccessResponse => 0b00000_1_000_0_0001,
+            MessageClass::ErrorResponse => 0b00000_1_000_1_0001,
+        };
+        let mut data: Vec<u8> = Vec::new();
+        data.extend_from_slice(message_type.to_be_bytes().as_slice());
+        data.extend_from_slice(self.message_length.to_be_bytes().as_slice());
+        data.extend_from_slice(self.magic_cookie.to_be_bytes().as_slice());
+        data.extend_from_slice(self.transaction_id.as_bytes());
+        data
     }
 }
 
-    // pub fn from_bytes(data: &[u8]) -> Self {
-    //     println!("{:?}", data);
-    //
-    //     // MessageType
-    //     let message_type = ((data[0] as u16) << 8) + data[1] as u16;
-    //
-    //     // MessageLength
-    //     let message_length = Self::bytes_to_u16(&data[2..4]);
-    //
-    //     // MagicCookie
-    //     let magic_cookie = Self::bytes_to_u32(&data[4..8]);
-    //
-    //     // TransactionID
-    //     let mut v: Vec<u8> = Vec::new();
-    //     v.extend_from_slice(&data[8..]);
-    //
-    //     // let transaction_id = TransactionId::from(v.as_slice())
-    //
-    //     Self {
-    //         // message_type,
-    //         message_length,
-    //         magic_cookie,
-    //         transaction_id: TransactionId::new(), // TODO
-    //     }
-    // }
+impl From<Vec<u8>> for Message {
+    fn from(data: Vec<u8>) -> Self {
+        let message_type_code = ((data[0] as u16) << 8) + (data[1] as u16);
 
-    // pub fn to_binary(&self) -> Vec<u8> {
-    //     let mut data: Vec<u8> = Vec::new();
-    //     data.extend_from_slice(&self.message_type.to_be_bytes());
-    //     data.extend_from_slice(&self.message_length.to_be_bytes());
-    //     data.extend_from_slice(&self.magic_cookie.to_be_bytes());
-    //     data.extend_from_slice(&self.transaction_id);
-    //     data
-    // }
+        let message_class: Result<MessageClass, ()> = match message_type_code {
+            0b00000_0_000_0_0001 => Ok(MessageClass::Request),
+            0b00000_0_000_1_0001 => Ok(MessageClass::Indication),
+            0b00000_1_000_0_0001 => Ok(MessageClass::SuccessResponse),
+            0b00000_1_000_1_0001 => Ok(MessageClass::ErrorResponse),
+            _ => {
+                todo!()
+            }
+        };
+
+        let length = ((data[2] as u16) << 8) + (data[3] as u16);
+
+        let magic_cookie = ((data[4] as u32) << 24)
+            + ((data[5] as u32) << 16)
+            + ((data[6] as u32) << 8)
+            + (data[7] as u32);
+
+        let transaction_id = TransactionId::from(&data[8..20]);
+
+        Self {
+            class: message_class.unwrap(),
+            method: Method(0),
+            message_length: length,
+            magic_cookie,
+            transaction_id,
+            attributes: vec![],
+        }
+    }
 }
 
 impl fmt::Debug for Message {
@@ -119,7 +134,7 @@ impl fmt::Debug for Message {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum MessageClass {
     /// 0b00
     Request,
@@ -143,8 +158,27 @@ impl MessageClass {
     }
 }
 
+mod test {
+    use crate::stun::MessageClass;
+
+    #[test]
+    fn message_class() {
+        assert_eq!(MessageClass::from_u8(0b00), Some(MessageClass::Request));
+        assert_eq!(MessageClass::from_u8(0b01), Some(MessageClass::Indication));
+        assert_eq!(
+            MessageClass::from_u8(0b10),
+            Some(MessageClass::SuccessResponse)
+        );
+        assert_eq!(
+            MessageClass::from_u8(0b11),
+            Some(MessageClass::ErrorResponse)
+        );
+        assert_eq!(MessageClass::from_u8(0b101), None);
+    }
+}
+
 #[derive(Debug, Copy, Clone)]
-struct Method(u16);
+pub struct Method(u16);
 
 impl Method {
     fn new(p: u16) -> Self {
@@ -162,21 +196,25 @@ impl From<u8> for Method {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
-struct TransactionId([u8; 12]);
+#[derive(Debug, Clone)]
+struct TransactionId(Vec<u8>);
 
 impl TransactionId {
     fn new() -> Self {
-        let mut transaction_id: [u8; 12] = [0; 12];
-        thread_rng().fill(&mut transaction_id);
-        Self(transaction_id)
+        let mut transaction_id = [0u8; 12];
+        thread_rng().fill(&mut transaction_id[..]);
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(&transaction_id[..]);
+        Self(bytes)
     }
 
-    fn from(data: [u8; 12]) -> Self {
-        Self(data)
+    fn from(data: &[u8]) -> Self {
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(data);
+        Self(bytes)
     }
 
-    fn as_bytes(&self) -> &[u8; 12] {
+    fn as_bytes(&self) -> &[u8] {
         &self.0
     }
 }
@@ -184,7 +222,6 @@ impl TransactionId {
 #[test]
 fn transaction_id() {
     let id = TransactionId::new();
-
     println!("{:?}", id);
 }
 
