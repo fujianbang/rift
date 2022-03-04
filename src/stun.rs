@@ -35,6 +35,7 @@ pub struct Message {
 }
 
 impl Message {
+    /// Returns a new Message
     pub fn new(class: MessageClass, method: Method) -> Self {
         Self {
             class,
@@ -46,25 +47,31 @@ impl Message {
         }
     }
 
-    // Returns the class of the message
+    /// Returns the class of the message
     fn class(&self) -> MessageClass {
         self.class
     }
 
-    // Returns the method of the message
+    /// Returns the method of the message
     fn method(&self) -> Method {
         self.method
     }
 
-    // Returns the Transaction ID of the message
+    /// Returns the Transaction ID of the message
     fn transaction_id(&self) -> TransactionId {
         self.transaction_id
     }
 
-    // Add Attribute to the message
+    /// Add Attribute to the message
     fn add_attribute(&mut self, attr: Attribute) {
         self.attributes.push(attr)
     }
+
+    /// Get the set of Attribute from the message
+    fn attributes(&self) -> &[Attribute]{
+        self.attributes.as_slice()
+    }
+}
 
     // pub fn from_bytes(data: &[u8]) -> Self {
     //     println!("{:?}", data);
