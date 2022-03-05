@@ -73,13 +73,12 @@ impl Message {
 
     /// To binary
     pub fn to_binary(&self) -> Vec<u8> {
-        // message type
-        let message_type: u16 = match self.class {
-            MessageClass::Request => 0b00000_0_000_0_0001,
-            MessageClass::Indication => 0b00000_0_000_1_0001,
-            MessageClass::SuccessResponse => 0b00000_1_000_0_0001,
-            MessageClass::ErrorResponse => 0b00000_1_000_1_0001,
-        };
+        let message_type = MessageType {
+            class: self.class,
+            method: self.method,
+        }
+        .to_u16();
+
         let mut data: Vec<u8> = Vec::new();
         data.extend_from_slice(message_type.to_be_bytes().as_slice());
         data.extend_from_slice(self.message_length.to_be_bytes().as_slice());
