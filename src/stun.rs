@@ -73,7 +73,7 @@ impl Message {
     }
 
     /// To binary
-    fn to_binary(&self) -> Vec<u8> {
+    pub fn to_binary(&self) -> Vec<u8> {
         // message type
         let message_type: u16 = match self.class {
             MessageClass::Request => 0b00000_0_000_0_0001,
@@ -121,6 +121,23 @@ impl From<Vec<u8>> for Message {
             transaction_id,
             attributes: vec![],
         }
+    }
+}
+
+mod test_message {
+    pub use crate::stun::{MessageClass, Method};
+    use crate::Message;
+
+    #[test]
+    fn message_from() {
+        let m = Message::new(MessageClass::Request, Method(10));
+        println!("{:?}", m);
+
+        let v: Vec<u8> = m.to_binary();
+        println!("{:?}", v);
+
+        let m2 = Message::from(v);
+        println!("{:?}", m);
     }
 }
 
