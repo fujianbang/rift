@@ -24,7 +24,6 @@ const MAGIC_COOKIE: u32 = 0x2112_A442;
 /// |                     Transaction ID (96 bits)                  |
 /// |                                                               |
 /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-// #[derive(,Clone)]
 pub struct Message {
     class: MessageClass,
     method: Method,
@@ -90,19 +89,34 @@ impl Message {
     }
 }
 
+impl PartialEq for Message {
+    fn eq(&self, other: &Self) -> bool {
+        if self.class != other.class {
+            return false;
+        }
+        if self.method.0 != other.method.0 {
+            return false;
+        }
+        if self.message_length != other.message_length {
+            return false;
+        }
+        if self.magic_cookie != other.magic_cookie {
+            return false;
+        }
+        for (i, &v) in self.transaction_id.0.iter().enumerate() {
+            if v != *other.transaction_id.0.get(i).unwrap() {
+                return false;
+            }
+        }
+        true
+    }
+}
+
 impl From<Vec<u8>> for Message {
     fn from(data: Vec<u8>) -> Self {
         let message_type_code = ((data[0] as u16) << 8) + (data[1] as u16);
 
-        let message_class: Result<MessageClass, ()> = match message_type_code {
-            0b00000_0_000_0_0001 => Ok(MessageClass::Request),
-            0b00000_0_000_1_0001 => Ok(MessageClass::Indication),
-            0b00000_1_000_0_0001 => Ok(MessageClass::SuccessResponse),
-            0b00000_1_000_1_0001 => Ok(MessageClass::ErrorResponse),
-            _ => {
-                todo!()
-            }
-        };
+        let MessageType { class, method } = MessageType::from_u16(message_type_code).unwrap();
 
         let length = ((data[2] as u16) << 8) + (data[3] as u16);
 
@@ -114,8 +128,8 @@ impl From<Vec<u8>> for Message {
         let transaction_id = TransactionId::from(&data[8..20]);
 
         Self {
-            class: message_class.unwrap(),
-            method: Method(0),
+            class,
+            method,
             message_length: length,
             magic_cookie,
             transaction_id,
@@ -137,7 +151,9 @@ mod test_message {
         println!("{:?}", v);
 
         let m2 = Message::from(v);
-        println!("{:?}", m);
+        println!("{:?}", m2);
+
+        assert_eq!(m, m2);
     }
 }
 
@@ -175,8 +191,39 @@ impl MessageClass {
     }
 }
 
+struct MessageType {
+    class: MessageClass,
+    method: Method,
+}
+
+impl MessageType {
+    fn to_u16(self) -> u16 {
+        let class = self.class as u16;
+        let method = self.method.to_u16();
+
+        (method & 0b0000_0000_1111)
+            | ((class & 0b01) << 4)
+            | ((method & 0b0000_0111_0000) << 5)
+            | ((class & 0b10) << 7)
+            | ((method & 0b1111_1000_00000) << 9)
+    }
+
+    fn from_u16(value: u16) -> Result<Self, ()> {
+        // TODO error handle
+
+        let class = ((value >> 4) & 0b01) | ((value >> 7) & 0b10);
+        let class = MessageClass::from_u8(class as u8).unwrap();
+        let method = (value & 0b0000_0000_1111)
+            | ((value >> 1) & 0b0000_0111_0000)
+            | ((value >> 2) & 0b1111_1000_0000);
+        let method = Method(method);
+
+        Ok(Self { class, method })
+    }
+}
+
 mod test {
-    use crate::stun::MessageClass;
+    use crate::stun::{MessageClass, MessageType, Method};
 
     #[test]
     fn message_class() {
@@ -191,6 +238,45 @@ mod test {
             Some(MessageClass::ErrorResponse)
         );
         assert_eq!(MessageClass::from_u8(0b101), None);
+    }
+
+    #[test]
+    fn message_type() {
+        assert_eq!(
+            MessageType {
+                class: MessageClass::Request,
+                method: Method(1),
+            }
+            .to_u16(),
+            0b00000_0_000_0_0001
+        );
+
+        assert_eq!(
+            MessageType {
+                class: MessageClass::Indication,
+                method: Method(1),
+            }
+            .to_u16(),
+            0b00000_0_000_1_0001
+        );
+
+        assert_eq!(
+            MessageType {
+                class: MessageClass::SuccessResponse,
+                method: Method(1),
+            }
+            .to_u16(),
+            0b00000_1_000_0_0001
+        );
+
+        assert_eq!(
+            MessageType {
+                class: MessageClass::ErrorResponse,
+                method: Method(1),
+            }
+            .to_u16(),
+            0b00000_1_000_1_0001
+        );
     }
 }
 
