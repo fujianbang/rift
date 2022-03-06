@@ -283,7 +283,7 @@ mod test {
 pub struct Method(u16);
 
 impl Method {
-    fn new(p: u16) -> Self {
+    pub fn new(p: u16) -> Self {
         Self(p)
     }
 

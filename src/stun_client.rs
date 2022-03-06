@@ -1,4 +1,4 @@
-use crate::stun::{Message, MessageClass};
+use crate::stun::{Message, MessageClass, Method};
 use std::net::UdpSocket;
 
 /// STUN client
@@ -25,16 +25,16 @@ impl Client {
             }
         };
 
-        // let package = Message::new(MessageClass::Request);
-        // println!("send {:?}", package);
-        // println!("send binary {:?}", package.binary().as_slice());
-        // match socket.send_to(package.binary().as_slice(), self.server_address.as_str()) {
-        //     Ok(a) => a,
-        //     Err(e) => {
-        //         println!("{:?}", e);
-        //         return Err(StunError::Network);
-        //     }
-        // };
+        let package = Message::new(MessageClass::Request, Method::new(1));
+        println!("send {:?}", package);
+        println!("send binary {:?}", package.to_binary());
+        match socket.send_to(package.to_binary().as_slice(), self.server_address.as_str()) {
+            Ok(a) => a,
+            Err(e) => {
+                println!("{:?}", e);
+                return Err(StunError::Network);
+            }
+        };
 
         Ok(())
     }
@@ -42,7 +42,7 @@ impl Client {
 
 #[test]
 fn test_discover() {
-    let c = Client::new("127.0.0.1:10000".to_string());
+    let c = Client::new("127.0.0.1:8080".to_string());
     c.discover();
 }
 
