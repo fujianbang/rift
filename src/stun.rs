@@ -111,8 +111,8 @@ impl PartialEq for Message {
     }
 }
 
-impl From<Vec<u8>> for Message {
-    fn from(data: Vec<u8>) -> Self {
+impl From<&[u8]> for Message {
+    fn from(data: &[u8]) -> Self {
         let message_type_code = ((data[0] as u16) << 8) + (data[1] as u16);
 
         let MessageType { class, method } = MessageType::from_u16(message_type_code).unwrap();
@@ -149,7 +149,7 @@ mod test_message {
         let v: Vec<u8> = m.to_binary();
         println!("{:?}", v);
 
-        let m2 = Message::from(v);
+        let m2 = Message::from(v.as_slice());
         println!("{:?}", m2);
 
         assert_eq!(m, m2);

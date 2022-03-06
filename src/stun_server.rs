@@ -1,3 +1,4 @@
+use crate::Message;
 use std::net::UdpSocket;
 
 const MAX_UDP_BUFFER_SIZE: usize = 256;
@@ -26,8 +27,10 @@ impl Server {
             match socket.recv_from(&mut buf) {
                 Ok((size, addr)) => {
                     let data = &buf[0..size];
-
                     println!("{:?} bytes received from {:?}", data.len(), addr);
+
+                    let m = Message::from(data);
+                    println!("{:?}", m);
                 }
                 Err(e) => {
                     println!("{:?}", e);
