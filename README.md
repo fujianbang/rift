@@ -1,5 +1,7 @@
 # rift
 
+[![Rust](https://github.com/fujianbang/rift/actions/workflows/rust.yml/badge.svg)](https://github.com/fujianbang/rift/actions/workflows/rust.yml)
+
 Utilities for Network implemented by Rust.
 
 ## Table of Contents
